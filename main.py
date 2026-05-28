@@ -1,5 +1,4 @@
 import requests
-from bs4 import BeautifulSoup
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os, json
@@ -16,38 +15,35 @@ client = gspread.authorize(creds)
 
 sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1paBlA499_ZIlfAHto-8-u4z3O8QVSwsqfbJJivnDNGo/edit").sheet1
 
-# -------- REQUEST --------
-url = "https://www.forexfactory.com/calendar"
+# -------- PEGAR DADOS (API INTERNA) --------
+url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
 
-headers = {
-    "User-Agent": "Mozilla/5.0"
-}
+res = requests.get(url)
 
-res = requests.get(url, headers=headers)
+if res.status_code != 200:
+    print("Erro ao acessar API")
+    exit()
 
-soup = BeautifulSoup(res.text, "html.parser")
-
-events = soup.select("tr.calendar__row")
+events = res.json()
 
 data = []
 
 for event in events:
-    try:
-        time = event.select_one(".calendar__time").text.strip()
-        currency = event.select_one(".calendar__currency").text.strip()
-        title = event.select_one(".calendar__event").text.strip()
+    impact = event.get("impact")
 
-        impact_span = event.select_one(".calendar__impact span")
+    # FILTRO: médio (2) e alto (3)
+    if impact in [2, 3]:
+        time = event.get("time")
+        currency = event.get("currency")
+        title = event.get("title")
 
-        if impact_span:
-            impact = impact_span["title"]  # Ex: High Impact Expected
+        # transformar impacto em texto
+        if impact == 3:
+            impact_text = "HIGH"
+        elif impact == 2:
+            impact_text = "MEDIUM"
 
-            # FILTRO 🔥
-            if "Medium" in impact or "High" in impact:
-                data.append([time, currency, impact, title])
-
-    except:
-        pass
+        data.append([time, currency, impact_text, title])
 
 # -------- ENVIAR PARA SHEETS --------
 sheet.clear()
