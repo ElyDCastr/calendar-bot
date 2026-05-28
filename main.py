@@ -18,7 +18,11 @@ sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1paBlA499_ZIl
 # -------- PEGAR DADOS (API INTERNA) --------
 url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
 
-res = requests.get(url)
+headers = {
+    "User-Agent": "Mozilla/5.0"
+}
+
+res = requests.get(url, headers=headers)
 
 if res.status_code != 200:
     print("Erro ao acessar API")
@@ -26,30 +30,42 @@ if res.status_code != 200:
 
 events = res.json()
 
+print(f"Total de eventos recebidos: {len(events)}")  # DEBUG
+
 data = []
 
 for event in events:
-    impact = event.get("impact")
+    try:
+        impact = str(event.get("impact", ""))
 
-    # FILTRO: médio (2) e alto (3)
-    if impact in [2, 3]:
-        time = event.get("time")
-        currency = event.get("currency")
-        title = event.get("title")
+        # FILTRO: médio e alto (independente do formato)
+        if ("2" in impact) or ("3" in impact) or ("Medium" in impact) or ("High" in impact):
 
-        # transformar impacto em texto
-        if impact == 3:
-            impact_text = "HIGH"
-        elif impact == 2:
-            impact_text = "MEDIUM"
+            time = event.get("time", "")
+            currency = event.get("currency", "")
+            title = event.get("title", "")
 
-        data.append([time, currency, impact_text, title])
+            # padronizar impacto
+            if "3" in impact or "High" in impact:
+                impact_text = "HIGH"
+            elif "2" in impact or "Medium" in impact:
+                impact_text = "MEDIUM"
+            else:
+                continue
+
+            data.append([time, currency, impact_text, title])
+
+    except Exception as e:
+        print("Erro ao processar evento:", e)
 
 # -------- ENVIAR PARA SHEETS --------
 sheet.clear()
 sheet.append_row(["Time", "Currency", "Impact", "Event"])
 
-for row in data:
-    sheet.append_row(row)
+if len(data) == 0:
+    print("⚠️ Nenhum evento encontrado (verificar estrutura da API)")
+else:
+    for row in data:
+        sheet.append_row(row)
 
 print(f"{len(data)} eventos enviados 🚀")
