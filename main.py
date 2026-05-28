@@ -39,23 +39,31 @@ for event in events:
         # pegar horário
         time = event.get("time") or event.get("date") or "N/A"
 
-        # -------- DETECTAR MOEDA --------
-        if "USD" in title or "FED" in title:
+        # -------- DETECTAR MOEDA (INTELIGENTE) --------
+        if any(x in title for x in ["USD", "FED", "PCE", "CPI", "GDP", "UNEMPLOYMENT", "HOME SALES"]):
             currency = "USD"
-        elif "EUR" in title or "ECB" in title:
+
+        elif any(x in title for x in ["EUR", "ECB", "GERMAN"]):
             currency = "EUR"
-        elif "JPY" in title or "BOJ" in title:
+
+        elif any(x in title for x in ["JPY", "BOJ", "TOKYO"]):
             currency = "JPY"
-        elif "GBP" in title or "BOE" in title:
+
+        elif any(x in title for x in ["GBP", "BOE"]):
             currency = "GBP"
-        elif "AUD" in title or "RBA" in title:
+
+        elif any(x in title for x in ["AUD", "RBA"]):
             currency = "AUD"
-        elif "NZD" in title or "RBNZ" in title:
+
+        elif any(x in title for x in ["NZD", "RBNZ"]):
             currency = "NZD"
-        elif "CAD" in title or "BOC" in title:
+
+        elif any(x in title for x in ["CAD", "BOC"]):
             currency = "CAD"
-        elif "CHF" in title or "SNB" in title:
+
+        elif any(x in title for x in ["CHF", "SNB"]):
             currency = "CHF"
+
         else:
             currency = "N/A"
 
