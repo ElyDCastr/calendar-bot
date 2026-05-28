@@ -14,7 +14,7 @@ creds_dict = json.loads(os.environ["GOOGLE_CREDS"])
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
 
-sheet = client.open("economic_calendar").sheet1
+sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1paBlA499_ZIlfAHto-8-u4z3O8QVSwsqfbJJivnDNGo/edit?gid=0#gid=0").sheet1
 
 # -------- REQUEST --------
 url = "https://www.investing.com/economic-calendar/"
