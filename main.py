@@ -3,6 +3,24 @@ from bs4 import BeautifulSoup
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os, json
+import os
+import json
+import gspread
+from google.oauth2.service_account import Credentials
+
+# pegar credenciais do GitHub
+creds_dict = json.loads(os.environ["GOOGLE_CREDS"])
+
+scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+
+client = gspread.authorize(creds)
+
+# abrir planilha pela URL
+sheet = client.open_by_url("SUA_URL_AQUI").sheet1
+
+# TESTE: escrever algo
+sheet.update("A1", [["FUNCIONANDO 🚀"]])
 
 # -------- GOOGLE AUTH --------
 scope = [
