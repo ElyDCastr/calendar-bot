@@ -15,7 +15,7 @@ client = gspread.authorize(creds)
 
 sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1paBlA499_ZIlfAHto-8-u4z3O8QVSwsqfbJJivnDNGo/edit").sheet1
 
-# -------- API --------
+# -------- API FOREX FACTORY --------
 url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
 
 res = requests.get(url)
@@ -28,22 +28,41 @@ events = res.json()
 
 print("Eventos recebidos:", len(events))
 
-# -------- PROCESSAMENTO --------
+# -------- PROCESSAR DADOS --------
 data = []
 
 for event in events:
     try:
-        impact = str(event.get("impact", ""))
-        title = event.get("title", "").strip()
+        impact = str(event.get("impact", "")).upper()
+        title = event.get("title", "").upper()
 
-        # 🔥 PEGAR CAMPOS CORRETOS
-        currency = event.get("currency") or "N/A"
+        # pegar horário
         time = event.get("time") or event.get("date") or "N/A"
 
-        # FILTRO IMPACTO
-        if "3" in impact or "High" in impact:
+        # -------- DETECTAR MOEDA --------
+        if "USD" in title or "FED" in title:
+            currency = "USD"
+        elif "EUR" in title or "ECB" in title:
+            currency = "EUR"
+        elif "JPY" in title or "BOJ" in title:
+            currency = "JPY"
+        elif "GBP" in title or "BOE" in title:
+            currency = "GBP"
+        elif "AUD" in title or "RBA" in title:
+            currency = "AUD"
+        elif "NZD" in title or "RBNZ" in title:
+            currency = "NZD"
+        elif "CAD" in title or "BOC" in title:
+            currency = "CAD"
+        elif "CHF" in title or "SNB" in title:
+            currency = "CHF"
+        else:
+            currency = "N/A"
+
+        # -------- FILTRO IMPACTO --------
+        if "3" in impact or "HIGH" in impact:
             impact_text = "HIGH"
-        elif "2" in impact or "Medium" in impact:
+        elif "2" in impact or "MEDIUM" in impact:
             impact_text = "MEDIUM"
         else:
             continue
@@ -53,13 +72,13 @@ for event in events:
     except Exception as e:
         print("Erro:", e)
 
-# -------- ENVIAR --------
+# -------- ENVIAR PARA PLANILHA --------
 sheet.clear()
 sheet.append_row(["Time", "Currency", "Impact", "Event"])
 
 if len(data) == 0:
-    print("❌ Nenhum dado")
+    print("❌ Nenhum dado encontrado")
 else:
     sheet.append_rows(data)
 
-print(f"✅ {len(data)} eventos enviados")
+print(f"✅ {len(data)} eventos enviados com sucesso 🚀")
