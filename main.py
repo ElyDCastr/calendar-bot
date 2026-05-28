@@ -15,7 +15,7 @@ client = gspread.authorize(creds)
 
 sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1paBlA499_ZIlfAHto-8-u4z3O8QVSwsqfbJJivnDNGo/edit").sheet1
 
-# -------- PEGAR DADOS (API INTERNA) --------
+# -------- PEGAR DADOS --------
 url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
 
 headers = {
@@ -30,22 +30,26 @@ if res.status_code != 200:
 
 events = res.json()
 
-print(f"Total de eventos recebidos: {len(events)}")  # DEBUG
+print(f"Total de eventos recebidos: {len(events)}")
 
+# -------- PROCESSAR DADOS --------
 data = []
 
 for event in events:
     try:
         impact = str(event.get("impact", ""))
+        time = event.get("time", "").strip()
+        currency = event.get("currency", "").strip()
+        title = event.get("title", "").strip()
 
-        # FILTRO: médio e alto (independente do formato)
+        # FILTRO DE IMPACTO (médio e alto)
         if ("2" in impact) or ("3" in impact) or ("Medium" in impact) or ("High" in impact):
 
-            time = event.get("time", "")
-            currency = event.get("currency", "")
-            title = event.get("title", "")
+            # IGNORAR eventos sem dados importantes
+            if time == "" or currency == "":
+                continue
 
-            # padronizar impacto
+            # PADRONIZAR IMPACTO
             if "3" in impact or "High" in impact:
                 impact_text = "HIGH"
             elif "2" in impact or "Medium" in impact:
@@ -56,14 +60,14 @@ for event in events:
             data.append([time, currency, impact_text, title])
 
     except Exception as e:
-        print("Erro ao processar evento:", e)
+        print("Erro:", e)
 
 # -------- ENVIAR PARA SHEETS --------
 sheet.clear()
 sheet.append_row(["Time", "Currency", "Impact", "Event"])
 
 if len(data) == 0:
-    print("⚠️ Nenhum evento encontrado (verificar estrutura da API)")
+    print("⚠️ Nenhum evento válido encontrado")
 else:
     for row in data:
         sheet.append_row(row)
